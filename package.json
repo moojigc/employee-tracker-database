@@ -1,0 +1,24 @@
+{
+  "name": "employee-tracker-database",
+  "version": "1.0.0",
+  "description": "CMS for keeping track of your company's employees.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moojigc/employee-tracker-database.git"
+  },
+  "author": "Moojig Battsogt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/moojigc/employee-tracker-database/issues"
+  },
+  "homepage": "https://github.com/moojigc/employee-tracker-database#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^7.1.0",
+    "mysql2": "^2.1.0"
+  }
+}
