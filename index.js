@@ -17,104 +17,60 @@ async function initialPrompt() {
             type: "list",
             message: "What would you like to do?",
             name: "action",
-            choices: ["Manage employees", "Manage roles", "Manage departments"],
+            choices: ["Manage employees", "Manage roles", "Manage departments", "Exit"],
         },
     ]);
     return action;
 }
 
-async function addEmployeesPrompt() {
-    let conn = await db.startPool();
-    // Check if roles and departments have been defined
-    let sql =
-        "SELECT roles.title, departments.name FROM roles INNER JOIN departments ON roles.department_id = departments.id;";
-    let res = await db.openQuery(conn, sql);
-    if (res.length === 0) {
-        conn.end();
-        throw new Error(
-            "You must set up roles and departments before adding employees!"
-        );
-    }
-    let { firstName, lastName, department, role, managerID } = await inq.prompt([
-        {
-            message: "Enter first name:",
-            name: "firstName",
-        },
-        {
-            message: "Enter last name:",
-            name: "lastName",
-        },
-        {
-            message: "Enter department:",
-            name: "department",
-        },
-        {
-            message: "Enter role:",
-            name: "role",
-        },
-        {
-            message: "Enter manager ID if employee has manager:",
-            name: "managerID",
-        },
-    ]);
-    let roleID = await db.openQuery(
-        conn,
-        "SELECT id FROM roles WHERE title = ?;",
-        role
-    );
-    let departmentID = await db.openQuery(
-        conn,
-        "SELECT id FROM departments WHERE name = ?;",
-        department
-    );
-    console.log(departmentID)
-    // let insert = await db.openQuery("INSERT INTO employees SET ?", {
-    //     first_name: firstName,
-    //     last_name: lastName,
-    //     department_id: departmentID,
-    //     role_id: roleID,
-    // });
-    await conn.end();
-    return insert;
-}
 
 async function addRolePrompt() {
     let conn = await db.startPool();
     // Check if departments have been defined
-    let sql = "SELECT id FROM departments;";
-    let res = await db.openQuery(conn, sql);
-    if (res.length === 0) {
+    let sql = "SELECT id, name FROM departments;";
+    let results = await db.openQuery(conn, sql);
+    if (results.length === 0) {
         conn.end();
         throw new Error("You must set up departments before adding roles!");
+    } else {
+        let allDepartments = results.map(r => r.name); // Take the value out of the name key from each department in the array
+        console.log(`All departments: ${allDepartments}`);
+        let { title, salary, departmentName } = await inq.prompt([
+            {
+                type: "list",
+                message: "Select role's department:",
+                name: "departmentName",
+                choices: allDepartments
+            },
+            {
+                message: "Enter new role's title:",
+                name: "title",
+            },
+            {
+                message: "Enter role's salary:",
+                name: "salary",
+            },
+        ]);
+        let [ department ] = results.filter(r => r.name === departmentName);
+        console.log(department.id);
+        let [ checkIfExists ] = await db.openQuery(conn, "SELECT id, title FROM roles WHERE ?", { title: title });
+        if (checkIfExists) {
+            return console.log(`Role already exists. Title: ${checkIfExists.title}. ID: ${checkIfExists.id}.`)
+        } else {
+            let insert = await db.openQuery(conn, "INSERT INTO roles SET ?", {
+                title: title,
+                salary: salary,
+                department_id: department.id,
+            });
+            await conn.end();
+            if (insert.affectedRows === 1) {
+                console.log(`Success! Inserted role ${title} with an ID of ${insert.insertId}.`)
+            } else {
+                console.log(`Unable to insert role ${title}.`);
+            }
+            return insert;
+        }
     }
-
-    let { title, salary, department } = await inq.prompt([
-        {
-            message: "Enter new role's title:",
-            name: "title",
-        },
-        {
-            message: "Enter role's salary:",
-            name: "salary",
-        },
-        {
-            message: "Enter role's department:",
-            name: "department",
-        },
-    ]);
-
-    let departmentID = await db.openQuery(
-        conn,
-        "SELECT id FROM departments WHERE name = ?",
-        department
-    );
-    let insert = await db.openQuery(conn, "INSERT INTO roles SET ?", {
-        title: title,
-        salary: salary,
-        department_id: departmentID,
-    });
-    await conn.end();
-    return insert;
 }
 
 async function addDepartmentPrompt() {
@@ -131,28 +87,49 @@ async function addDepartmentPrompt() {
 }
 
 async function manageEmployees() {
-    let { action } = inq.prompt([
+    let { action } = await inq.prompt([
         {
             type: "list",
             message: "Would you like to view, add, update, or delete an employee?",
             choices: [
                 "Add",
+                "Update",
                 "View",
                 "Delete"
-            ]  
+            ],
+            name: "action"  
         }
     ])
+    let employee = new Employee();
     switch (action) {
         case 'Add':
-            addEmployeesPrompt()
-                .then((r) => console.log(r))
-                .catch(console.error);
+            try {
+                await employee.addEmployeesPrompt();
+            } catch (error) {
+                console.log(error);
+            } finally {
+                main();
+            }
             break;
+        case 'Update':
+            try {
+                await employee.updateEmployeesPrompt();
+            } catch (error) {
+                console.log(error);
+            } finally {
+                main();
+            }
         case 'View':
             
             break;
         case 'Delete':
-            
+            try {
+                await employee.deleteEmployeesPrompt();
+            } catch (error) {
+                console.log(error);
+            } finally {
+                main();
+            }
             break;
         default:
             break;
@@ -163,21 +140,31 @@ async function main() {
     const action = await initialPrompt();
     switch (action) {
         case "Manage employees":
-            
+            await manageEmployees();
             break;
         case "Manage roles":
-            addRolePrompt()
-                .then((r) => console.log(r))
-                .catch(console.error);
+            try {
+                await addRolePrompt()
+            } catch (error) {
+                console.log(error)
+            } finally {
+                // Recursive function time!
+                main();
+            }
             break;
         case "Manage departments":
-            addDepartmentPrompt()
-                .then((r) => console.log(r))
-                .catch(console.error);
-
+            try {
+                await addDepartmentPrompt();
+                
+            } catch (error) {
+                console.log(error)
+            } finally {
+                main();
+            }
             break;
+        case 'Exit':
         default:
-            break;
+            return;
     }
 }
 
