@@ -1,14 +1,9 @@
 const inq = require("inquirer");
 const cTable = require("console.table");
 
-const Sequel = require("./utils/Database");
 const Employee = require("./lib/Employee");
 const Role = require("./lib/Role");
 const Department = require("./lib/Department");
-
-// contains user, pass, host, db name
-const CONFIG = require("./utils/config.json");
-const db = new Sequel(CONFIG);
 
 async function manageEmployees() {
     const employee = new Employee();
@@ -87,15 +82,24 @@ async function manageRoles() {
 
                     break;
                 case "Update":
-                    console.log("nothing");
+                    await role.updateRole();
 
                     break;
                 case "View":
-                    console.log("nothing");
+                    let allRoles = await role.getAllRoles();
+                    let formatted = allRoles.map(r => {
+                        return {
+                            'ID': r.id,
+                            'Title': role.capitalize(r.title),
+                            'Salary': '$' + r.salary,
+                            'Department': role.capitalize(r.departmentName),
+                        }
+                    });
+                    console.table(formatted);
 
                     break;
                 case "Delete":
-                    console.log("nothing");
+                    await role.deleteRole();
 
                     break;
             }
@@ -124,10 +128,10 @@ async function manageDepartments() {
         try {
             switch (action) {
                 case "Add":
-                    await department.addDepartmentPrompt().then(r => console.log(r));;
+                    await department.addDepartmentPrompt();
                     break;
                 case "Update":
-                    await department.updateDepartmentsPrompt().then(r => console.log(r));
+                    await department.updateDepartmentsPrompt();
 
                     break;
                 case "View":
@@ -142,7 +146,7 @@ async function manageDepartments() {
                     
                     break;
                 case "Delete":
-                    await department.deleteDepartmentPrompt().then(r => console.log(r));;
+                    await department.deleteDepartmentPrompt();
 
                     break;
             }
