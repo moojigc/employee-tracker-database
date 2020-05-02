@@ -124,18 +124,25 @@ async function manageDepartments() {
         try {
             switch (action) {
                 case "Add":
-                    await department.addDepartmentPrompt();
+                    await department.addDepartmentPrompt().then(r => console.log(r));;
                     break;
                 case "Update":
-                    console.log("aint nothing here yet");
+                    await department.updateDepartmentsPrompt().then(r => console.log(r));
 
                     break;
                 case "View":
-                    console.log("aint nothing here yet");
-
+                    let results = await department.getAllDepartments();
+                    let formatted = results.map(d => {
+                        return {
+                            'ID': d.id,
+                            'Name': d.capitalize(d.name)
+                        }
+                    })
+                    console.table(formatted);
+                    
                     break;
                 case "Delete":
-                    await department.deleteDepartmentPrompt();
+                    await department.deleteDepartmentPrompt().then(r => console.log(r));;
 
                     break;
             }
