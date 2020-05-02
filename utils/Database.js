@@ -25,6 +25,7 @@ class Sequel {
     async closedQuery(sqlStatement, values) {
         const conn = await this.startPool();
         try {
+            // the native .query method returns an array of rows then columns
             const [ rows ] = await conn.query(sqlStatement, values);
             return rows;
         } catch (error) {
