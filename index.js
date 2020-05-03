@@ -160,6 +160,9 @@ async function manageDepartments() {
     }
 }
 
+// Run the program
+main();
+
 // Runs the program
 async function main() {
     // Ask the user what they would like to do
@@ -199,10 +202,7 @@ async function main() {
             // some recursive fun
             await main();
         }
-    } else {
-        return;
-    }
+    } 
 }
 
-// Run the program
-main();
+
