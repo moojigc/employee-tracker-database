@@ -33,8 +33,3 @@ ADD FOREIGN KEY (department_id) REFERENCES departments(id);
 
 ALTER TABLE role
 ADD FOREIGN KEY (department_id) REFERENCES departments(id);
-
-select * from employees;
-delete from employees where first_name = "umiko";
-
-SELECT id FROM employees WHERE first_name = "shizuku" AND last_name = "hazuki";
